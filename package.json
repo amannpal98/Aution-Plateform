@@ -1,0 +1,14 @@
+{
+  "name": "bidhub-auction-platform",
+  "version": "1.0.0",
+  "description": "Full-stack real-time auction platform",
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "start": "cd server && npm start",
+    "seed": "cd server && node seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
