@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: bidhub-server
+    env: node
+    branch: main
+    plan: free
+    root: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://live-aution-plateform.onrender.com
+      # IMPORTANT: Replace these with secure values in Render dashboard (do not commit secrets)
+      - key: MONGO_URI
+        value: REPLACE_WITH_MONGO_URI
+      - key: JWT_SECRET
+        value: REPLACE_WITH_JWT_SECRET

@@ -56,18 +56,55 @@ app.use((err, req, res, next) => {
 // Socket.IO
 initSocket(io);
 
-// MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB Connected');
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
+// MongoDB with retry + degraded mode
+let dbConnected = false;
+const PORT = process.env.PORT || 5000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function startServer() {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    if (!dbConnected) {
+      console.warn('⚠️  Running in degraded mode: MongoDB not connected. API routes will return 503.');
+    }
   });
+}
+
+// Block API routes when DB is not connected to avoid uncaught model errors
+app.use('/api', (req, res, next) => {
+  if (!dbConnected) {
+    return res.status(503).json({
+      message: 'Service temporarily unavailable: database not connected',
+      details: 'If deployed on Render, ensure MongoDB Atlas allows connections from Render (add IP whitelist or use 0.0.0.0/0 for testing).',
+    });
+  }
+  next();
+});
+
+async function connectWithRetry(retries = 5, delay = 5000) {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    dbConnected = true;
+    console.log('✅ MongoDB Connected');
+    await startServer();
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message);
+    if (retries > 0) {
+      console.log(`Retrying MongoDB connection in ${delay / 1000}s... (${retries} attempts left)`);
+      await sleep(delay);
+      return connectWithRetry(retries - 1, delay * 2);
+    }
+
+    console.error('Failed to connect to MongoDB after retries. Starting server in degraded mode.');
+    console.error('Recommendation: In Atlas Network Access add Render IPs or temporarily allow 0.0.0.0/0.');
+    await startServer();
+  }
+}
+
+// Start the connect attempts (will start server even if DB fails after retries)
+connectWithRetry();
 
 module.exports = { app, io };
