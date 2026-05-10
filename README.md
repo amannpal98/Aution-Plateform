@@ -16,7 +16,7 @@ A full-stack real-time bidding web application built with React, Node.js, Socket
 ## ⚙️ Setup
 
 ### Clone Repository
-git clone https://github.com/amannpal98/Live-Bidding-Plateform.git  
+git clone https://github.com/amannpal98/Aution-Plateform.git 
 cd auction-app  
 
 ### Backend Setup
